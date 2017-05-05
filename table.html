@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>表格过滤排序 Demo</title>
+    <link rel="stylesheet" href="bootstrap-3.3.7.css">
+    <link rel="stylesheet" href="table.css">
+    <script src="lib/vue-2.1.4.js"></script>
+    <script src="lib/jquery-3.1.1.js"></script>
+</head>
+<body>
+<div class="app">
+    <header class="header">
+        <h2>表格过滤排序 Demo</h2>
+    </header>
+    <div class="search">
+        <input type="text" id="appkeyVal" placeholder="appkey" v-model="table.appkeyVal">
+        <button type="button" @click="searchBtn">搜索</button>
+    </div>
+
+    <v-table :table="table.rowsFilter"></v-table>
+
+
+</div>
+</body>
+<template id="table-content">
+    <div class="table-content">
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead>
+                <tr>
+                    <th>No</th>
+                    <th>Appkey</th>
+                    <th>url 地址</th>
+                    <th>开发者</th>
+                    <th>App 名称</th>
+                    <th>环境</th>
+                    <th>状态</th>
+                    <th>生效时间</th>
+                    <th>操作</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr v-for="(row,index) in rows">
+                    <td>{{index+1}}</td>
+                    <td>{{row.appkey}}</td>
+                    <td>{{row.url}}</td>
+                    <td>{{row.developer}}</td>
+                    <td>{{row.name}}</td>
+                    <td>{{row.environment}}</td>
+                    <td>{{row.status}}</td>
+                    <td>{{row.effect}}</td>
+                    <td><a href="" v-for="handle in row.handles">{{handle}}</a></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <nav aria-label="Page navigation">
+            <ul class="pagination">
+                <li>
+                    <a href="#" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                <li v-for="n in pageCount" :class=" page == n ? 'active' : ''"><a href="#" @click="pageBtn(n)">{{n}}</a>
+                </li>
+                <li>
+                    <a href="#" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+    </div>
+</template>
+<script>
+
+    var tableContent = {
+        props: ['table'],
+        template: '#table-content',
+        data: function () {
+            return {
+                pageNumber: 10,
+                page: 1
+            }
+        },
+        methods: {
+            next: function () {
+                if (this.page < this.pageCount) {
+                    this.page++;
+                }
+            },
+            pre: function () {
+                if (this.page > 1) {
+                    this.page--;
+                }
+            },
+            pageBtn: function (page) {
+                this.page = page;
+            }
+        },
+        computed: {
+            pageCount: function () {
+                /*console.log(this.table.length);*/
+                return Math.ceil(this.table.length / this.pageNumber);
+            },
+            rows: function () {
+                return this.table.slice((this.page - 1) * this.pageNumber, this.page * this.pageNumber)
+            }
+        },
+        watch: {
+            table: function () {
+                this.page = 1;
+            }
+        }
+
+
+    };
+
+    var app = new Vue({
+        el: '.app',
+        data: {
+            table: {
+                rows: [],
+                rowsFilter: [],
+                appkeyVal: ''
+            }
+        },
+        methods: {
+            getData: function (callback) {
+                $.getJSON('data.json', function (data) {
+                    callback(data.rows);
+                })
+            },
+            searchBtn: function () {
+                if (this.table.rows.length > 0) {
+                    var filtered = this.filterItem(this.table.rows, 'appkey', this.table.appkeyVal);
+                    this.table.rowsFilter = filtered;
+                }
+
+            },
+            filterItem: function (contents, key, val) {
+                return contents.filter(function (item) {
+                    return item[key].indexOf(val) !== -1;
+                })
+            }
+        },
+        mounted: function () {
+            var self = this;
+            this.getData(function (data) {
+                self.table.rows = self.table.rowsFilter = data;
+                /*self.table.rowsFilterPage = self.table.rowsFilter.slice(0,10);*/
+            });
+        },
+        components: {
+            vTable: tableContent
+        }
+    });
+
+</script>
+</html>
